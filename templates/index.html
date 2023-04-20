@@ -33,7 +33,6 @@
                 <thead>
                     <tr>
                         <th scope="col">Bild</th>
-                        <th scope="col">Copy Link</th>
                         <th scope="col">Timestamp</th>
                         <th scope="col">IP-Adresse</th>
                         <th scope="col">Land</th>
@@ -48,6 +47,8 @@
             </table>
         </div>
         <button id="refreshTable" class="btn btn-secondary">Aktualisieren</button>
+		<a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+
     </div>
     <script>
        	function refreshTable() {
@@ -77,8 +78,8 @@
                         filteredData.forEach(function(item) {
                             let row = $('<tr></tr>');
                             if (firstRow) {
-                                row.append(`<td rowspan="${filteredData.length}"><img src="/thumbnails/${image_id}_thumbnail${image_ext}" class="thumbnail-image" alt="Thumbnail" class="thumbnail"></td>`);
-                                row.append(`<td><button onclick="copyLink('${image_id}', '${image_ext}')">Copy Link</button></td>`);
+                                row.append(`<td rowspan="${filteredData.length}"><img src="/thumbnails/${image_id}_thumbnail${image_ext}" class="thumbnail-image" alt="Thumbnail" class="thumbnail"><br><br><button onclick="copyLink('${image_id}', '${image_ext}')">Copy Link</button></td>`);
+                                
                                 firstRow = false;
                             }
                             row.append(`<td>${item.timestamp}</td>`);
