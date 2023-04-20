@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find the client</title>
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .thumbnail-image {
+            width: 200px;
+            height: auto;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="mb-4">Bild-Upload</h1>
+        <form method="post" enctype="multipart/form-data" class="mb-4">
+            <div class="mb-3">
+                <input type="file" name="file" class="form-control">
+            </div>
+            <input type="submit" value="Hochladen" class="btn btn-primary">
+        </form>
+        <div class="table-container">
+            <table class="table table-bordered table-striped" id="dataTable">
+                <thead>
+                    <tr>
+                        <th scope="col">Bild</th>
+                        <th scope="col">Copy Link</th>
+                        <th scope="col">Timestamp</th>
+                        <th scope="col">IP-Adresse</th>
+                        <th scope="col">Land</th>
+                        <th scope="col">Region</th>
+                        <th scope="col">Stadt</th>
+                        <th scope="col">Löschen</th>
+                        <th scope="col">Bild löschen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <button id="refreshTable" class="btn btn-secondary">Aktualisieren</button>
+    </div>
+    <script>
+       	function refreshTable() {
+    $.getJSON('/get_user_data', function(data) {
+        let dataTable = $('#dataTable');
+        dataTable.find('tr:not(:first)').remove();
+        $.getJSON('/get_upload_data', function(uploadData) {
+            if (uploadData.length === 0) {
+                let row = $('<tr></tr>');
+                row.append(`<td colspan="8">Keine Daten vorhanden</td>`);
+                dataTable.append(row);
+            } else {
+                uploadData.forEach(function(image_info) {
+                    let image_id = image_info.id;
+					let image_ext = image_info.ext;
+                    let filteredData = data.filter(item => item.image_id === image_id);
+                    if (filteredData.length === 0) {
+                        let row = $('<tr></tr>');
+                        row.append(`<td><img src="/thumbnails/${image_id}_thumbnail${image_ext}" class="thumbnail-image" alt="Thumbnail" class="thumbnail"></td>`);
+                        row.append(`<td><button onclick="copyLink('${image_id}', '${image_ext}')">Copy Link</button></td>`);
+                        row.append(`<td colspan="5">Keine Daten vorhanden</td>`);
+						row.append(`<td></td>`);
+						row.append(`<td><button onclick="deleteImage('${image_id}', '${image_ext}')">Bild löschen</button></td>`);
+                        dataTable.append(row);
+                    } else {
+                        let firstRow = true;
+                        filteredData.forEach(function(item) {
+                            let row = $('<tr></tr>');
+                            if (firstRow) {
+                                row.append(`<td rowspan="${filteredData.length}"><img src="/thumbnails/${image_id}_thumbnail${image_ext}" class="thumbnail-image" alt="Thumbnail" class="thumbnail"></td>`);
+                                row.append(`<td><button onclick="copyLink('${image_id}', '${image_ext}')">Copy Link</button></td>`);
+                                firstRow = false;
+                            }
+                            row.append(`<td>${item.timestamp}</td>`);
+                            row.append(`<td>${item.ip}</td>`);
+                            row.append(`<td>${item.country}</td>`);
+                            row.append(`<td>${item.region}</td>`);
+                            row.append(`<td>${item.city}</td>`);
+                            row.append(`<td><button onclick="deleteUserData('${item.image_id}', '${item.timestamp}')">Löschen</button></td>`);
+							row.append(`<td><button onclick="deleteImage('${image_id}', '${image_ext}')">Bild löschen</button></td>`);
+                            dataTable.append(row);
+                        });
+                    }
+                });
+            }
+        });
+    });
+}
+
+function showAlert(message) {
+    let alertBox = $('<div class="alert alert-success" role="alert"></div>');
+    alertBox.text(message);
+    $('body').append(alertBox);
+    setTimeout(function () {
+        alertBox.remove();
+    }, 2000);
+}
+
+
+function copyLink(image_id, image_ext) {
+    let link = document.createElement("input");
+    link.value = `${window.location.protocol}//${window.location.host}/uploads/${image_id}${image_ext}`;
+    document.body.appendChild(link);
+    link.select();
+    document.execCommand("copy");
+    document.body.removeChild(link);
+    showAlert("Link kopiert!");
+}
+
+function deleteImage(image_id, image_ext) {
+    if (confirm("Sind Sie sicher, dass Sie das Bild und das Thumbnail löschen möchten?")) {
+        $.post('/delete_image', {image_id: image_id, image_ext: image_ext}, function() {
+            refreshTable();
+        });
+    }
+}
+
+function deleteUserData(image_id, timestamp) {
+    $.post('/delete_user_data', {image_id: image_id, timestamp: timestamp}, function() {
+        refreshTable();
+    });
+}
+
+
+        $(document).ready(function() {
+            refreshTable();
+            $('form').submit(function(event) {
+                event.preventDefault();
+                let formData = new FormData(this);
+                $.ajax({
+				url: '/',
+				type: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false,
+				success: function(response) {
+					if (response.error) {
+						alert(response.error);
+					} else {
+						refreshTable();
+					}
+				}
+			});
+
+            });
+            $('#refreshTable').click(function() {
+                refreshTable();
+            });
+        });
+    </script>
+</body>
+</html>
