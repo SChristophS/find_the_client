@@ -123,7 +123,12 @@ def thumbnail(filename):
 def uploaded_file(filename):
     reader = Reader('GeoLite2-City.mmdb')
 
-    ip = request.remote_addr
+    if request.headers.get("X-Forwarded-For"):
+        ip = request.headers.get("X-Forwarded-For").split(",")[0]
+        logging.info(f"IP extracted from X-Forwarded-For")
+    else:
+        ip = request.remote_addr
+        logging.info(f"IP extracted without X-Forwarded-For")
 
     try:
         location = reader.city(ip)
