@@ -1,9 +1,20 @@
+# How To Push new changes to Docker-Hub:
+docker build -t splasher2000/find-the-client:0.03 .
+
+docker push splasher2000/find-the-client:0.03
+
+
+
 # install git
 sudo apt-get update
 sudo apt-get install git
 
 # to clone
 git clone https://github.com/SChristophS/find_the_client.git
+
+# run setup
+chmod +x setup.sh
+./setup.sh
 
 # to run
 nohup python3 app.py > output.log 2>&1 &
@@ -22,9 +33,17 @@ In diesem Fall werden also sowohl die normalen Ausgaben als auch die Fehlerausga
 &: Das kaufmännische Und (&) am Ende des Befehls bedeutet, dass das Skript im Hintergrund ausgeführt wird.
 Das ermöglicht es Ihnen, die Kontrolle über die Konsole zurückzuerhalten und weitere Befehle auszuführen, während das Skript weiterhin im Hintergrund läuft.
 
-
 # to find Process-ID (PID)
 ps aux | grep app.py
 
 # to kill
 kill <PID>
+
+# make script executable
+chmod +x /home/christoph/apps/dynDNS/nsupdate.sh
+
+# add crontab
+crontab -e
+
+# add new line
+0 * * * * /home/christoph/apps/dynDNS/nsupdate.sh

@@ -152,17 +152,49 @@ def uploaded_file(filename):
 @app.route('/get_user_data')
 def get_user_data():
     data = []
-    with open(app.config['USER_DATA_FILE'], 'r') as f:
-        for line in f:
-            image_id, timestamp, ip, country, region, city = line.strip().split(';')
-            data.append({
-                'image_id': image_id,
-                'timestamp': timestamp,
-                'ip': ip,
-                'country': country,
-                'region': region,
-                'city': city
-            })
+    user_data_file = app.config['USER_DATA_FILE']
+
+    # Loggen, welche Datei eingelesen wird
+    print(f"Reading user data from file: {user_data_file}")
+
+    if not os.path.exists(user_data_file):
+        logging.info(f"File does not exist: {user_data_file}")
+        return jsonify([]), 404
+
+    # Testweise Encoding angeben (UTF-8)
+    # Falls hier der Fehler weiterhin auftritt, Encoding auf 'iso-8859-1' ändern
+    try:
+        with open(user_data_file, 'r', encoding='utf-8') as f:
+            line_number = 0
+            for line in f:
+                line_number += 1
+                # Logge die gelesene Zeile (oder zumindest ihre Länge)
+                logging.info(f"Line {line_number}: {repr(line)}")
+
+                # Hier kann es zum Fehler kommen, falls der Split fehlschlägt
+                # Prüfe vorher, ob die Zeile überhaupt das erwartete Format hat
+                parts = line.strip().split(';')
+                if len(parts) != 6:
+                    logging.info(f"Line {line_number} does not have 6 parts: {parts}")
+                    continue
+
+                image_id, timestamp, ip, country, region, city = parts
+
+                data.append({
+                    'image_id': image_id,
+                    'timestamp': timestamp,
+                    'ip': ip,
+                    'country': country,
+                    'region': region,
+                    'city': city
+                })
+    except UnicodeDecodeError as e:
+        print(f"UnicodeDecodeError encountered: {e}")
+        # Optional: Datei mit anderem Encoding versuchen oder Abbruch
+        # Mit anderem Encoding:
+        # with open(user_data_file, 'r', encoding='iso-8859-1', errors='replace') as f:
+        #     # Gleiche Logik wie oben
+
     return jsonify(data)
 
 
@@ -199,9 +231,12 @@ def allowed_file(filename):
 
 def create_files_if_not_exist(file_list):
     for file in file_list:
+        logging.info(f"Checking file: {file}")
         if not os.path.exists(file):
+            logging.info(f"Creating empty file: {file}")
             with open(file, 'w') as _:
                 pass
+
 
 
 if __name__ == '__main__':
